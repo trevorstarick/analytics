@@ -36,22 +36,9 @@
     shape-rendering: crispEdges;
   }
 
-  .cpu {
-    stroke: #f44336;
-    stroke: #4CAF50;
-    stroke: #2196F3;
-  }
-
-  .mem {
-    stroke: #4CAF50;
-    stroke: #2196F3;
-    stroke: #f44336;
-  }
-
-  .area {
-    fill: lightsteelblue;
-    stroke-width: 0;
-  }
+  .cpu { stroke: #2196F3; }
+  .mem { stroke: #f44336; }
+  .bat { stroke: #4CAF50; }
 </style>
 
 <body>
@@ -138,7 +125,7 @@
       .attr("class", "y axis")
       .call(d3.svg.axis().scale(y).orient("left"));
 
-    var devices = ['cpu', 'mem', 'net'];
+    var devices = ['bat', 'cpu', 'mem', 'net'];
 
     devices.forEach(function(v) {
       init(v)

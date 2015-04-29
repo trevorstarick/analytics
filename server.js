@@ -43,6 +43,33 @@ r.connect({
         }
       });
     });
+
+  r
+    .db('analytics')
+    .table('net_usage')
+    .changes()
+    .run(connection, function(err, cursor) {
+      if (err) throw err;
+      cursor.each(function(err, row) {
+        if (err) throw err;
+        if (row.new_val && !row.old_val) {
+          io.emit('new::net', row);
+        }
+      });
+    });
+  r
+    .db('analytics')
+    .table('bat_usage')
+    .changes()
+    .run(connection, function(err, cursor) {
+      if (err) throw err;
+      cursor.each(function(err, row) {
+        if (err) throw err;
+        if (row.new_val && !row.old_val) {
+          io.emit('new::bat', row);
+        }
+      });
+    });
 });
 
 app.get('/', function(req, res) {
