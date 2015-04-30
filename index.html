@@ -36,38 +36,79 @@
     shape-rendering: crispEdges;
   }
 
-  .cpu { stroke: #2196F3; }
-  .mem { stroke: #f44336; }
-  .bat { stroke: #4CAF50; }
+  .cpu {
+    stroke: #2196F3;
+  }
+
+  .mem {
+    stroke: #f44336;
+  }
+
+  .bat {
+    stroke: #4CAF50;
+  }
 </style>
 
 <body>
   <script type="" src="https://cdn.socket.io/socket.io-1.3.5.js"></script>
   <script type="" src="http://d3js.org/d3.v3.min.js"></script>
   <script type="text/javascript">
-    function init(type) {
-      d3.json('/get?t=' + type + '_usage&l=' + n, function(err, d) {
-        data[type] = d;
+    function ref(obj, str) {
+      str = str.split(".");
+      for (var i = 0; i < str.length; i++)
+        obj = obj[str[i]];
+      return obj;
+    }
 
-        paths[type] = svg.append("g")
-          .attr("clip-path", "url(#clip)")
-          .append("path")
-          .datum(data[type])
-          .attr("class", "line " + type)
-          .attr("d", line);
+    function lineGen(p, mod) {
+      mod = mod || (8 * 1024 * 1024);
+
+      return d3.svg.line()
+        // .interpolate("basis") // Curves?
+        .x(function(d, i) {
+          return x((Date.now() - d.timestamp) / 1000)
+        })
+        .y(function(d) {
+          return y(ref(d, p) /  mod)
+        });
+    }
+
+    function pathGen(type, d) {
+      data[type] = d;
+
+      paths[type] = svg.append("g")
+        .attr("clip-path", "url(#clip)")
+        .append("path")
+        .datum(data[type])
+        .attr("class", "line " + type)
+        .attr("d", lines[type]);
+    }
+
+    function init(type) {
+      if (type === 'net') {
+        lines['net'] = {
+          send: lineGen('payload.send'),
+          recv: lineGen('payload.recv')
+        }
+        lines['net'] = lineGen('payload.recv');
+      } else {
+        lines[type] = lineGen('value');
+      }
+
+      d3.json('/get?t=' + type + '_usage&l=' + n, function(err, d) {
+        pathGen(type, d);
       });
 
       socket.on('new::' + type, function(d) {
         update(type, d.new_val)
       });
-
     }
 
     function update(type, d) {
       data[type].unshift(d);
 
       paths[type]
-        .attr("d", line)
+        .attr("d", lines[type])
         .attr("transform", null)
         .transition()
         .attr("transform", "translate(" + x(n - 1) + ",0)");
@@ -81,6 +122,7 @@
     var data = {};
     var paths = {};
     var areas = {};
+    var lines = {};
 
     var margin = {
         top: 20,
@@ -96,17 +138,8 @@
       .range([width, 0]);
 
     var y = d3.scale.linear()
-      .domain([0, 100])
+      .domain([0, 1])
       .range([height, 0]);
-
-    var line = d3.svg.line()
-      // .interpolate("basis") // Curves?
-      .x(function(d, i) {
-        return x((Date.now() - d.timestamp) / 1000)
-      })
-      .y(function(d) {
-        return y(d.value * 100)
-      });
 
     var svg = d3.select("body").append("svg")
       .attr("width", width)
